@@ -1,46 +1,89 @@
-import React, { useState } from 'react';
+import React, {Component } from 'react';
 import './App.css';
 import click1 from './click1.wav';
 import click2 from './click2.wav'; 
 
-function App() {
-  const [playing, setPlaying] = useState(false)
-  const [count, setCount] = useState(0)
-  const [bpm, setBpm] = useState(100)
-  const [beatsPerMeasure, setBeatsPerMeasure] = useState(4)
-  let click1 = new Audio("https://daveceddia.com/freebies/react-metronome/click1.wav")
-  let click2 = new Audio("https://daveceddia.com/freebies/react-metronome/click2.wav")
+class App extends Component {
+  constructor(props){
+    super(props)
 
-  
+  this.state = {
+    playing: false,
+    count: 0,
+    bpm: 100,
+    beatsPerMeasure: 4
+  };
 
- const handleBpmChange = event => {
-  const bpm = event.target.value
-  setBpm( bpm )
- }
+  this.click1 = new Audio(click1)
+  this.click2 = new Audio(click2)
+}
 
- const startStop = () => {
-   click1.play();
-   console.log(click1)
+startStop = () => {
+  if(this.state.playing) {
+    clearInterval(this.timer)
+    this.setState({
+      playing: false
+    })
+  } else {
+    this.timer = setInterval(this.playClick, (60 / this.state.bpm) * 1000);
+    this.setState({
+      count: 0,
+      playing: true
+    }, this.playClick)
+  }
+}
+
+playClick = () => {
+  const { count, beatsPerMeasure} = this.state;
+
+  if(count % beatsPerMeasure === 0) {
+    this.click2.play()
+  } else {
+    this.click1.play()
   }
 
+  this.setState(state => ({
+    count: (state.count + 1) % state.beatsPerMeasure
+  }));
+}
 
-  return (
+handleBpmChange = event => {
+  const bpm = event.target.value;
+  
+  if(this.state.playing) {
+    clearInterval(this.timer)
+    this.timer = setInterval(this.playClick, (60 / bpm) * 1000)
 
-    <div className="metronome">
-    <audio src="https://daveceddia.com/freebies/react-metronome/click2.wav" controls />
-      <div className="bpm-slider">
+    this.setState({
+      count: 0,
+      bpm
+    })
+  } else {
+    this.setState({ bpm })
+  }
+}
+
+  render() {
+    const {playing, bpm} = this.state;
+
+    return(
+      <div className="metronome">
+        <div className="bpm-slider">
         <div>{bpm} BPM</div>
-        <input 
-          type="range" 
-          min="60" 
-          max="240" 
-          value={bpm}
-          onChange={handleBpmChange}
-        />
+          <input
+            type="range"
+            min="60"
+            max="240"
+            value={bpm}
+            onChange={this.handleBpmChange} 
+          />
+        </div>
+        <button onClick={this.startStop}>
+          {playing ? 'Stop' : 'Start'}
+        </button>
       </div>
-        <button onClick={startStop}>{playing ? 'Stop' : 'Start'}</button>
-    </div>
-  );
+    )
+  }
 }
 
 export default App;
